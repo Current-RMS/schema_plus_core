@@ -110,6 +110,15 @@ module SchemaPlus
           SchemaMonkey::Middleware::Dumper::Table.start(dumper: self, connection: @connection, dump: @dump, table: @dump.tables[table] = SchemaDump::Table.new(name: table)) do |env|
             stream = StringIO.new
             super env.table.name, stream
+
+            # Update to something here (I think schema monkey but everything has been updated) means it pulls in more of the constraints for queue_classic_jobs and the regex above blows up on it
+            # This enforces the previous string structure which doesn't cause the regex to blow up
+            if table == "queue_classic_jobs"
+              end_str = "(locked_at IS NULL)" 
+              stri = stream.string.index end_str
+              stream.string[(end_str.length + stri)..] = "\"\n  end\n\n"
+            end
+            
             m = stream.string.match %r{
             \A \s*
               create_table \s*
